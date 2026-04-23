@@ -1,11 +1,10 @@
 import React, { useState, useMemo } from 'react';
 
-// --- 타입 및 프리셋 정의 ---
 interface GpuModel {
   name: string;
-  powerPerNode: number; // kW
-  defaultSellingPrice: number; // $/hr
-  defaultCapexPerGpu: number; // $
+  powerPerNode: number;
+  defaultSellingPrice: number;
+  defaultCapexPerGpu: number;
   gpuPerNode: number;
 }
 
@@ -34,39 +33,35 @@ const GPU_MODELS: Record<string, GpuModel> = {
 };
 
 const GpuAasInvestorSimulator: React.FC = () => {
-  // --- 핵심 상태 관리 ---
   const [selectedModel, setSelectedModel] = useState<string>('B200');
-  const [gpus, setGpus] = useState<number>(32768); // 초기값을 AIDC 메가클러스터 규모로 세팅
+  const [gpus, setGpus] = useState<number>(32768);
   const [utilization, setUtilization] = useState<number>(80);
   const [pue] = useState<number>(1.25);
   const [powerCost] = useState<number>(0.12);
   const [rackLimit] = useState<number>(100);
 
-  // --- 비즈니스 모델 & 금융 상태 ---
-  const [dcModel, setDcModel] = useState<'Colocation' | 'Owned'>('Owned'); // 코로케이션 임대 vs 자가 구축
-  const [coloRate, setColoRate] = useState<number>(3000); // 랙당 상면/쿨링 임대비 (월)
-  const [facilityCapexPerMw, setFacilityCapexPerMw] = useState<number>(10); // 자가 구축 시 MW당 건설비 ($M)
-  const [interestRate, setInterestRate] = useState<number>(5.5); // 자본 조달 금리 (연 %)
+  const [dcModel, setDcModel] = useState<'Colocation' | 'Owned'>('Owned');
+  const [coloRate, setColoRate] = useState<number>(3000);
+  const [facilityCapexPerMw, setFacilityCapexPerMw] = useState<number>(10);
+  const [interestRate, setInterestRate] = useState<number>(5.5);
 
-  // --- 매출 & CAPEX 디테일 ---
   const [sellingPrice, setSellingPrice] = useState<number>(
     GPU_MODELS['B200'].defaultSellingPrice
   );
   const [capexPrice, setCapexPrice] = useState<number>(
     GPU_MODELS['B200'].defaultCapexPerGpu
   );
-  const [networkRatio, setNetworkRatio] = useState<number>(15); // 네트워킹 장비 (%)
-  const [storageSwRatio, setStorageSwRatio] = useState<number>(10); // 스토리지 & 라이선스 (%)
+  // ✅ 업계 기준 초기값: Networking 20%, Storage & SW 12%
+  const [networkRatio, setNetworkRatio] = useState<number>(20);
+  const [storageSwRatio, setStorageSwRatio] = useState<number>(12);
   const [networkOpexPerRack] = useState<number>(800);
 
-  // --- 숫자 포맷팅 헬퍼 ---
   const formatMegaBillion = (val: number) => {
     if (val >= 1e9) return `$${(val / 1e9).toFixed(2)}B`;
     if (val >= 1e6) return `$${(val / 1e6).toFixed(2)}M`;
     return `$${val.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
   };
 
-  // --- 핵심 연산 로직 (useMemo) ---
   const stats = useMemo(() => {
     const model = GPU_MODELS[selectedModel];
     const nodes = gpus / model.gpuPerNode;
@@ -75,41 +70,34 @@ const GpuAasInvestorSimulator: React.FC = () => {
     const totalMw = totalKw / 1000;
     const racks = Math.ceil(totalKw / rackLimit);
 
-    // 1. CAPEX 계산 (Hardware + Facility)
     const serverCapex = gpus * capexPrice;
     const networkCapex = serverCapex * (networkRatio / 100);
     const storageSwCapex = serverCapex * (storageSwRatio / 100);
     const hwCapex = serverCapex + networkCapex + storageSwCapex;
 
-    // 자가 구축(Owned)일 경우 MW당 건설 비용 추가
     const facilityCapex =
       dcModel === 'Owned' ? totalMw * (facilityCapexPerMw * 1000000) : 0;
     const totalCapex = hwCapex + facilityCapex;
 
-    // 2. 감가상각 (서버/네트워크는 4년, 건축물은 15년)
     const hwDepreciation = hwCapex / 48;
     const facilityDepreciation = facilityCapex > 0 ? facilityCapex / 180 : 0;
     const monthlyDepreciation = hwDepreciation + facilityDepreciation;
 
-    // 3. OPEX 계산
     const monthlyHours = 720;
     const opExPower = totalKw * monthlyHours * powerCost;
     const opExFacility =
-      dcModel === 'Colocation' ? racks * coloRate : racks * 400; // Owned도 자체 상면 유지비 소량 반영
+      dcModel === 'Colocation' ? racks * coloRate : racks * 400;
     const opExNetwork = racks * networkOpexPerRack;
-    const opExMaintenance = nodes * 200; // 고급 인력 SG&A 포함
+    const opExMaintenance = nodes * 200;
     const totalOpEx = opExPower + opExFacility + opExNetwork + opExMaintenance;
 
-    // 4. 금융 이자 (PF 등 자본 조달 이자 반영)
     const monthlyInterest = (totalCapex * (interestRate / 100)) / 12;
 
-    // 5. 매출 및 이익 (P&L)
     const revenue = gpus * monthlyHours * (utilization / 100) * sellingPrice;
     const operatingProfit = revenue - totalOpEx - monthlyDepreciation;
-    const netProfit = operatingProfit - monthlyInterest; // 최종 순이익
+    const netProfit = operatingProfit - monthlyInterest;
 
-    // 6. 현금흐름 및 투자회수
-    const cashFlow = revenue - totalOpEx - monthlyInterest; // 실제 손에 쥐는 현금 (EBITDA - Interest)
+    const cashFlow = revenue - totalOpEx - monthlyInterest;
     const paybackMonths =
       cashFlow > 0 ? (totalCapex / cashFlow).toFixed(1) : '∞';
     const roi = (((netProfit * 12) / totalCapex) * 100).toFixed(1);
@@ -164,6 +152,37 @@ const GpuAasInvestorSimulator: React.FC = () => {
     setCapexPrice(GPU_MODELS[m].defaultCapexPerGpu);
   };
 
+  // ✅ 슬라이더 아래 금액 표시용 뱃지 스타일
+  const capexBadgeStyle: React.CSSProperties = {
+    display: 'inline-block',
+    marginTop: '6px',
+    padding: '3px 10px',
+    borderRadius: '20px',
+    background: '#eff6ff',
+    color: '#0070f3',
+    fontSize: '12px',
+    fontWeight: '700',
+    letterSpacing: '0.01em',
+    border: '1px solid #bfdbfe',
+  };
+
+  // ✅ 모든 input 공통 스타일 — box-sizing: border-box 가 핵심
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '8px',
+    marginTop: '5px',
+    borderRadius: '6px',
+    border: '1px solid #ddd',
+    boxSizing: 'border-box',
+    fontFamily: 'inherit',
+    fontSize: '14px',
+  };
+
+  const inputCyanStyle: React.CSSProperties = {
+    ...inputStyle,
+    border: '1px solid #b2ebf2',
+  };
+
   return (
     <div
       style={{
@@ -181,12 +200,12 @@ const GpuAasInvestorSimulator: React.FC = () => {
               AIDC Mega-Scale Simulator{' '}
               <span
                 style={{
-                  fontSize: '16px',
+                  fontSize: '14px',
                   color: '#666',
                   fontWeight: 'normal',
                 }}
               >
-                v 0.2
+                v 0.3
               </span>
             </h1>
             <p style={{ color: '#666', margin: 0 }}>
@@ -195,7 +214,7 @@ const GpuAasInvestorSimulator: React.FC = () => {
           </div>
         </header>
 
-        {/* 장비 선택 탭 */}
+        {/* GPU Model Tabs */}
         <div style={{ display: 'flex', gap: '10px', marginBottom: '25px' }}>
           {Object.keys(GPU_MODELS).map((m) => (
             <button
@@ -228,15 +247,17 @@ const GpuAasInvestorSimulator: React.FC = () => {
             gap: '30px',
           }}
         >
-          {/* 컨트롤 패널 */}
+          {/* Control Panel */}
           <section
             style={{
               background: '#fff',
               padding: '25px',
               borderRadius: '16px',
               boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-              maxHeight: '800px',
+              maxHeight: '900px',
               overflowY: 'auto',
+              overflowX: 'hidden',
+              boxSizing: 'border-box',
             }}
           >
             <h3
@@ -251,7 +272,7 @@ const GpuAasInvestorSimulator: React.FC = () => {
               Config Variables
             </h3>
 
-            {/* GPU 수량 입력 (슬라이더 + 텍스트) */}
+            {/* GPU Count */}
             <div style={{ marginBottom: '20px' }}>
               <label
                 style={{
@@ -303,12 +324,42 @@ const GpuAasInvestorSimulator: React.FC = () => {
                       textAlign: 'right',
                       fontFamily: 'inherit',
                       fontSize: '14px',
+                      boxSizing: 'border-box',
                     }}
                   />
                 </div>
               </div>
+              {/* ✅ GPU 수량 기준 총 HW CapEx 뱃지 */}
+              <div
+                style={{
+                  marginTop: '8px',
+                  display: 'flex',
+                  gap: '8px',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <span style={capexBadgeStyle}>
+                  GPU Server CapEx: {formatMegaBillion(stats.serverCapex)}
+                </span>
+                <span
+                  style={{
+                    ...capexBadgeStyle,
+                    background: '#f0fdf4',
+                    color: '#16a34a',
+                    borderColor: '#bbf7d0',
+                  }}
+                >
+                  Total HW CapEx:{' '}
+                  {formatMegaBillion(
+                    stats.serverCapex +
+                      stats.networkCapex +
+                      stats.storageSwCapex
+                  )}
+                </span>
+              </div>
             </div>
 
+            {/* Utilization */}
             <div style={{ marginBottom: '20px' }}>
               <label
                 style={{
@@ -332,6 +383,7 @@ const GpuAasInvestorSimulator: React.FC = () => {
               />
             </div>
 
+            {/* Interest Rate */}
             <div
               style={{
                 padding: '15px',
@@ -348,16 +400,11 @@ const GpuAasInvestorSimulator: React.FC = () => {
                 step="0.1"
                 value={interestRate}
                 onChange={(e) => setInterestRate(Number(e.target.value))}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  marginTop: '5px',
-                  borderRadius: '6px',
-                  border: '1px solid #ddd',
-                }}
+                style={inputStyle}
               />
             </div>
 
+            {/* Selling Price & CAPEX per GPU */}
             <div
               style={{
                 padding: '15px',
@@ -374,14 +421,7 @@ const GpuAasInvestorSimulator: React.FC = () => {
                 value={sellingPrice}
                 step="0.1"
                 onChange={(e) => setSellingPrice(Number(e.target.value))}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  marginTop: '5px',
-                  borderRadius: '6px',
-                  border: '1px solid #ddd',
-                  marginBottom: '10px',
-                }}
+                style={{ ...inputStyle, marginBottom: '10px' }}
               />
               <label style={{ fontSize: '13px', color: '#666' }}>
                 Hardware CAPEX per GPU ($)
@@ -391,18 +431,21 @@ const GpuAasInvestorSimulator: React.FC = () => {
                 value={capexPrice}
                 step="1000"
                 onChange={(e) => setCapexPrice(Number(e.target.value))}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  marginTop: '5px',
-                  borderRadius: '6px',
-                  border: '1px solid #ddd',
-                }}
+                style={inputStyle}
               />
+              {/* ✅ GPU 서버 총액 표시 */}
+              <div
+                style={{ marginTop: '8px', fontSize: '12px', color: '#888' }}
+              >
+                GPU Server Total:{' '}
+                <span style={{ fontWeight: '700', color: '#1a1a1a' }}>
+                  {formatMegaBillion(stats.serverCapex)}
+                </span>
+              </div>
             </div>
 
-            {/* 인프라 비율 세팅 */}
-            <div style={{ marginBottom: '15px' }}>
+            {/* ✅ Networking Ratio — 슬라이더 아래 총액 표시 */}
+            <div style={{ marginBottom: '18px' }}>
               <label
                 style={{
                   display: 'block',
@@ -411,19 +454,44 @@ const GpuAasInvestorSimulator: React.FC = () => {
                   color: '#555',
                 }}
               >
-                Networking Ratio: {networkRatio}%
+                Networking Ratio:{' '}
+                <span style={{ color: '#0070f3' }}>{networkRatio}%</span>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    color: '#aaa',
+                    fontWeight: '400',
+                    marginLeft: '6px',
+                  }}
+                >
+                  of GPU Server cost
+                </span>
               </label>
               <input
                 type="range"
                 min="0"
-                max="30"
+                max="40"
                 step="1"
                 value={networkRatio}
                 onChange={(e) => setNetworkRatio(Number(e.target.value))}
-                style={{ width: '100%' }}
+                style={{ width: '100%', marginTop: '6px' }}
               />
+              {/* 총 금액 뱃지 */}
+              <div>
+                <span style={capexBadgeStyle}>
+                  InfiniBand / Networking Total:{' '}
+                  {formatMegaBillion(stats.networkCapex)}
+                </span>
+              </div>
+              <div
+                style={{ fontSize: '11px', color: '#bbb', marginTop: '4px' }}
+              >
+                Industry ref: ~15–25% for large-scale InfiniBand clusters
+              </div>
             </div>
-            <div style={{ marginBottom: '15px' }}>
+
+            {/* ✅ Storage & SW Ratio — 슬라이더 아래 총액 표시 */}
+            <div style={{ marginBottom: '18px' }}>
               <label
                 style={{
                   display: 'block',
@@ -432,7 +500,18 @@ const GpuAasInvestorSimulator: React.FC = () => {
                   color: '#555',
                 }}
               >
-                Storage & SW Ratio: {storageSwRatio}%
+                Storage & SW Ratio:{' '}
+                <span style={{ color: '#0070f3' }}>{storageSwRatio}%</span>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    color: '#aaa',
+                    fontWeight: '400',
+                    marginLeft: '6px',
+                  }}
+                >
+                  of GPU Server cost
+                </span>
               </label>
               <input
                 type="range"
@@ -441,11 +520,23 @@ const GpuAasInvestorSimulator: React.FC = () => {
                 step="1"
                 value={storageSwRatio}
                 onChange={(e) => setStorageSwRatio(Number(e.target.value))}
-                style={{ width: '100%' }}
+                style={{ width: '100%', marginTop: '6px' }}
               />
+              {/* 총 금액 뱃지 */}
+              <div>
+                <span style={capexBadgeStyle}>
+                  NVMe Storage / SW License Total:{' '}
+                  {formatMegaBillion(stats.storageSwCapex)}
+                </span>
+              </div>
+              <div
+                style={{ fontSize: '11px', color: '#bbb', marginTop: '4px' }}
+              >
+                Industry ref: ~10–15% (NVMe arrays + CUDA/software licensing)
+              </div>
             </div>
 
-            {/* DC 모델별 변수 */}
+            {/* DC Model Specific */}
             <div
               style={{
                 padding: '15px',
@@ -470,13 +561,7 @@ const GpuAasInvestorSimulator: React.FC = () => {
                     value={coloRate}
                     step="100"
                     onChange={(e) => setColoRate(Number(e.target.value))}
-                    style={{
-                      width: '100%',
-                      padding: '8px',
-                      marginTop: '5px',
-                      borderRadius: '6px',
-                      border: '1px solid #b2ebf2',
-                    }}
+                    style={inputCyanStyle}
                   />
                 </>
               ) : (
@@ -497,19 +582,13 @@ const GpuAasInvestorSimulator: React.FC = () => {
                     onChange={(e) =>
                       setFacilityCapexPerMw(Number(e.target.value))
                     }
-                    style={{
-                      width: '100%',
-                      padding: '8px',
-                      marginTop: '5px',
-                      borderRadius: '6px',
-                      border: '1px solid #b2ebf2',
-                    }}
+                    style={inputCyanStyle}
                   />
                 </>
               )}
             </div>
 
-            {/* 비즈니스 모델 토글 */}
+            {/* Business Model Toggle */}
             <div
               style={{
                 marginTop: '24px',
@@ -581,7 +660,7 @@ const GpuAasInvestorSimulator: React.FC = () => {
             </div>
           </section>
 
-          {/* 메인 대시보드 */}
+          {/* Main Dashboard */}
           <div>
             <div
               style={{
@@ -724,8 +803,6 @@ const GpuAasInvestorSimulator: React.FC = () => {
                       {formatMegaBillion(stats.revenue * (100 / utilization))}
                     </td>
                   </tr>
-
-                  {/* OPEX Breakdown */}
                   <tr style={{ height: '40px', borderTop: '1px solid #eee' }}>
                     <td style={{ color: '#444' }}>
                       Total Operating Expenses (OPEX)
@@ -820,8 +897,6 @@ const GpuAasInvestorSimulator: React.FC = () => {
                       {formatMegaBillion(stats.opExMaintenance)}
                     </td>
                   </tr>
-
-                  {/* Financial Costs */}
                   <tr style={{ height: '40px', borderTop: '1px solid #eee' }}>
                     <td style={{ color: '#444' }}>
                       Depreciation (HW & Facility)
@@ -850,7 +925,6 @@ const GpuAasInvestorSimulator: React.FC = () => {
                       - {formatMegaBillion(stats.monthlyInterest)}
                     </td>
                   </tr>
-
                   <tr
                     style={{ height: '60px', borderTop: '2px solid #1a1a1a' }}
                   >
@@ -917,9 +991,10 @@ const GpuAasInvestorSimulator: React.FC = () => {
               </div>
               • GPU Servers: {formatMegaBillion(stats.serverCapex)}
               <br />• Network/InfiniBand:{' '}
-              {formatMegaBillion(stats.networkCapex)} ({networkRatio}%)
+              {formatMegaBillion(stats.networkCapex)} ({networkRatio}% of GPU
+              cost)
               <br />• Storage & SW: {formatMegaBillion(stats.storageSwCapex)} (
-              {storageSwRatio}%)
+              {storageSwRatio}% of GPU cost)
               <br />• DC Facility Build:{' '}
               {formatMegaBillion(stats.facilityCapex)} (Model: {dcModel})
             </div>
@@ -931,3 +1006,4 @@ const GpuAasInvestorSimulator: React.FC = () => {
 };
 
 export default GpuAasInvestorSimulator;
+
