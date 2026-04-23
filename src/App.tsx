@@ -155,12 +155,12 @@ const GpuAasInvestorSimulator: React.FC = () => {
   // ✅ 슬라이더 아래 금액 표시용 뱃지 스타일
   const capexBadgeStyle: React.CSSProperties = {
     display: 'inline-block',
-    marginTop: '6px',
-    padding: '3px 10px',
-    borderRadius: '20px',
+    marginTop: '4px',
+    padding: '3px 8px',
+    borderRadius: '4px',
     background: '#eff6ff',
     color: '#0070f3',
-    fontSize: '12px',
+    fontSize: '10px',
     fontWeight: '700',
     letterSpacing: '0.01em',
     border: '1px solid #bfdbfe',
@@ -170,12 +170,12 @@ const GpuAasInvestorSimulator: React.FC = () => {
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '8px',
-    marginTop: '5px',
-    borderRadius: '6px',
+    marginTop: '4px',
+    borderRadius: '4px',
     border: '1px solid #ddd',
     boxSizing: 'border-box',
     fontFamily: 'inherit',
-    fontSize: '14px',
+    fontSize: '12px',
   };
 
   const inputCyanStyle: React.CSSProperties = {
@@ -193,14 +193,14 @@ const GpuAasInvestorSimulator: React.FC = () => {
           '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <header style={{ marginBottom: '30px' }}>
+      <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
+        <header style={{ marginBottom: '60px' }}>
           <div>
-            <h1 style={{ color: '#1a1a1a', margin: '0 0 10px 0' }}>
+            <h1 style={{ color: '#1a1a1a', margin: '20px 0 10px 10px' }}>
               AIDC Mega-Scale Simulator{' '}
               <span
                 style={{
-                  fontSize: '14px',
+                  fontSize: '12px',
                   color: '#666',
                   fontWeight: 'normal',
                 }}
@@ -209,7 +209,7 @@ const GpuAasInvestorSimulator: React.FC = () => {
               </span>
             </h1>
             <p style={{ color: '#666', margin: 0 }}>
-              Sovereign AI 인프라 및 대규모 GPU 클러스터 사업성 타당성 분석
+              AIDC_GPUaaSv 사업성 분석
             </p>
           </div>
         </header>
@@ -222,17 +222,13 @@ const GpuAasInvestorSimulator: React.FC = () => {
               onClick={() => handleModelChange(m)}
               style={{
                 padding: '12px 24px',
-                borderRadius: '8px',
+                borderRadius: '4px',
                 cursor: 'pointer',
                 fontWeight: '600',
                 transition: 'all 0.2s',
                 border: 'none',
-                backgroundColor: selectedModel === m ? '#0070f3' : '#fff',
+                backgroundColor: selectedModel === m ? '#002060' : '#fff',
                 color: selectedModel === m ? '#fff' : '#444',
-                boxShadow:
-                  selectedModel === m
-                    ? '0 4px 12px rgba(0,112,243,0.3)'
-                    : '0 2px 4px rgba(0,0,0,0.05)',
               }}
             >
               {GPU_MODELS[m].name}
@@ -252,7 +248,7 @@ const GpuAasInvestorSimulator: React.FC = () => {
             style={{
               background: '#fff',
               padding: '25px',
-              borderRadius: '16px',
+              borderRadius: '4px',
               boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
               maxHeight: '900px',
               overflowY: 'auto',
@@ -319,7 +315,7 @@ const GpuAasInvestorSimulator: React.FC = () => {
                     style={{
                       width: '120px',
                       padding: '6px 10px',
-                      borderRadius: '6px',
+                      borderRadius: '4px',
                       border: '1px solid #ccc',
                       textAlign: 'right',
                       fontFamily: 'inherit',
@@ -388,7 +384,7 @@ const GpuAasInvestorSimulator: React.FC = () => {
               style={{
                 padding: '15px',
                 backgroundColor: '#f8f9fa',
-                borderRadius: '12px',
+                borderRadius: '4px',
                 marginBottom: '20px',
               }}
             >
@@ -409,7 +405,7 @@ const GpuAasInvestorSimulator: React.FC = () => {
               style={{
                 padding: '15px',
                 backgroundColor: '#f8f9fa',
-                borderRadius: '12px',
+                borderRadius: '4px',
                 marginBottom: '20px',
               }}
             >
@@ -541,7 +537,7 @@ const GpuAasInvestorSimulator: React.FC = () => {
               style={{
                 padding: '15px',
                 backgroundColor: '#e0f7fa',
-                borderRadius: '12px',
+                borderRadius: '4px',
                 marginTop: '20px',
               }}
             >
@@ -612,7 +608,7 @@ const GpuAasInvestorSimulator: React.FC = () => {
                   display: 'flex',
                   background: '#e4e4e7',
                   padding: '4px',
-                  borderRadius: '8px',
+                  borderRadius: '4px',
                 }}
               >
                 <button
@@ -620,16 +616,13 @@ const GpuAasInvestorSimulator: React.FC = () => {
                   style={{
                     flex: 1,
                     padding: '8px 12px',
-                    borderRadius: '6px',
+                    borderRadius: '4px',
                     border: 'none',
                     background:
-                      dcModel === 'Colocation' ? '#0070f3' : 'transparent',
+                      dcModel === 'Colocation' ? '#002060' : 'transparent',
                     color: dcModel === 'Colocation' ? '#fff' : '#444',
                     fontWeight: dcModel === 'Colocation' ? 'bold' : 'normal',
-                    boxShadow:
-                      dcModel === 'Colocation'
-                        ? '0 2px 4px rgba(0,112,243,0.2)'
-                        : 'none',
+                    
                     cursor: 'pointer',
                     fontSize: '13px',
                   }}
@@ -641,15 +634,12 @@ const GpuAasInvestorSimulator: React.FC = () => {
                   style={{
                     flex: 1,
                     padding: '8px 12px',
-                    borderRadius: '6px',
+                    borderRadius: '4px',
                     border: 'none',
-                    background: dcModel === 'Owned' ? '#0070f3' : 'transparent',
+                    background: dcModel === 'Owned' ? '#002060' : 'transparent',
                     color: dcModel === 'Owned' ? '#fff' : '#444',
                     fontWeight: dcModel === 'Owned' ? 'bold' : 'normal',
-                    boxShadow:
-                      dcModel === 'Owned'
-                        ? '0 2px 4px rgba(0,112,243,0.2)'
-                        : 'none',
+                    
                     cursor: 'pointer',
                     fontSize: '13px',
                   }}
@@ -675,7 +665,7 @@ const GpuAasInvestorSimulator: React.FC = () => {
                   background: '#1a1a1a',
                   color: '#fff',
                   padding: '20px',
-                  borderRadius: '16px',
+                  borderRadius: '4px',
                 }}
               >
                 <small style={{ color: '#aaa' }}>Total CAPEX</small>
@@ -701,7 +691,7 @@ const GpuAasInvestorSimulator: React.FC = () => {
                 style={{
                   background: '#fff',
                   padding: '20px',
-                  borderRadius: '16px',
+                  borderRadius: '4px',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
                 }}
               >
@@ -711,7 +701,7 @@ const GpuAasInvestorSimulator: React.FC = () => {
                     fontSize: '28px',
                     fontWeight: 'bold',
                     margin: '5px 0',
-                    color: '#1abc9c',
+                    color: '#002060',
                   }}
                 >
                   {stats.paybackMonths} Mo
@@ -724,7 +714,7 @@ const GpuAasInvestorSimulator: React.FC = () => {
                 style={{
                   background: '#fff',
                   padding: '20px',
-                  borderRadius: '16px',
+                  borderRadius: '4px',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
                 }}
               >
@@ -734,7 +724,7 @@ const GpuAasInvestorSimulator: React.FC = () => {
                     fontSize: '28px',
                     fontWeight: 'bold',
                     margin: '5px 0',
-                    color: '#3498db',
+                    color: '#002060',
                   }}
                 >
                   {stats.totalMw.toFixed(1)} MW
@@ -750,7 +740,7 @@ const GpuAasInvestorSimulator: React.FC = () => {
               style={{
                 background: '#fff',
                 padding: '30px',
-                borderRadius: '16px',
+                borderRadius: '4px',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
               }}
             >
@@ -777,7 +767,7 @@ const GpuAasInvestorSimulator: React.FC = () => {
                       style={{
                         textAlign: 'right',
                         fontWeight: 'bold',
-                        color: '#27ae60',
+                        color: '#0070f3',
                       }}
                     >
                       + {formatMegaBillion(stats.revenue)}
@@ -955,14 +945,14 @@ const GpuAasInvestorSimulator: React.FC = () => {
             background: '#1e1e1e',
             color: '#d4d4d4',
             padding: '25px',
-            borderRadius: '12px',
+            borderRadius: '4px',
             fontFamily: '"Fira Code", monospace',
             fontSize: '13px',
           }}
         >
           <div
             style={{
-              color: '#569cd6',
+              color: '#ffffff',
               marginBottom: '15px',
               fontSize: '15px',
               fontWeight: 'bold',
@@ -978,7 +968,7 @@ const GpuAasInvestorSimulator: React.FC = () => {
             }}
           >
             <div>
-              <div style={{ color: '#ce9178', marginBottom: '8px' }}>
+              <div style={{ color: '#ffffff', marginBottom: '8px' }}>
                 [Power & Cooling]
               </div>
               • Power Strategy: IT Load {stats.itKw.toFixed(0)}kW / PUE {pue}{' '}
@@ -986,7 +976,7 @@ const GpuAasInvestorSimulator: React.FC = () => {
               <br />• Rack Density: {rackLimit} kW/Rack → {stats.racks} Racks
             </div>
             <div>
-              <div style={{ color: '#ce9178', marginBottom: '8px' }}>
+              <div style={{ color: '#ffffff', marginBottom: '8px' }}>
                 [CAPEX Master Breakdown]
               </div>
               • GPU Servers: {formatMegaBillion(stats.serverCapex)}
@@ -1006,4 +996,5 @@ const GpuAasInvestorSimulator: React.FC = () => {
 };
 
 export default GpuAasInvestorSimulator;
+
 
